@@ -31,6 +31,7 @@ client.once(Events.ClientReady, (c) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+  // ---- Slash command /estado ----
   if (interaction.isChatInputCommand() && interaction.commandName === 'estado') {
     await interaction.reply({
       components: [buildPanelInicio()],
@@ -39,6 +40,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     return;
   }
 
+  // ---- Botones dentro del panel ----
   if (interaction.isButton()) {
     if (interaction.customId === 'btn_entrar_servicio') {
       await interaction.reply({ content: '🚔 Entraste en servicio.', ephemeral: true });
@@ -49,6 +51,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     return;
   }
 
+  // ---- Select menu dentro del panel ----
   if (interaction.isStringSelectMenu() && interaction.customId === 'select_rol') {
     const elegido = interaction.values[0];
     await interaction.reply({ content: `Elegiste: **${elegido}**`, ephemeral: true });
