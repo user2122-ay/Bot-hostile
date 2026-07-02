@@ -11,6 +11,11 @@ const {
   ButtonStyle,
   StringSelectMenuBuilder,
   ActivityType,
+  REST,
+  Routes,
+  SlashCommandBuilder,
+  ApplicationIntegrationType,
+  InteractionContextType,
 } = require('discord.js');
 
 const client = new Client({
@@ -18,20 +23,50 @@ const client = new Client({
 });
 
 // ---------- CONFIG RÁPIDA ----------
-const COLOR_ESTADO = 0x1f3a5f; // azul institucional, cambialo si querés
+const COLOR_ESTADO = 0x1f3a5f;
 const ESTADO_BOT = { nombre: 'vigilando el estado 👮', tipo: ActivityType.Playing };
 // ------------------------------------
 
-client.once(Events.ClientReady, (c) => {
+// Se registra solo cada vez que el bot arranca. No hace falta correr nada a mano.
+async function registrarComandos() {
+  const comandosGlobales = [
+    new SlashCommandBuilder()
+      .setName('estado')
+      .setDescription('Panel de rol (estado/policía)')
+      .setIntegrationTypes(
+        ApplicationIntegrationType.GuildInstall,
+        ApplicationIntegrationType.UserInstall,
+      )
+      .setContexts(
+        InteractionContextType.Guild,
+        InteractionContextType.BotDM,
+        InteractionContextType.PrivateChannel,
+      ),
+  ].map((c) => c.toJSON());
+
+  const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+  await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), {
+    body: comandosGlobales,
+  });
+  console.log('✅ Comando /estado registrado (global).');
+}
+
+client.once(Events.ClientReady, async (c) => {
   console.log(`✅ Conectado como ${c.user.tag}`);
+
   c.user.setPresence({
     activities: [{ name: ESTADO_BOT.nombre, type: ESTADO_BOT.tipo }],
     status: 'online',
   });
+
+  try {
+    await registrarComandos();
+  } catch (err) {
+    console.error('❌ Error registrando comandos:', err);
+  }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  // ---- Slash command /estado ----
   if (interaction.isChatInputCommand() && interaction.commandName === 'estado') {
     await interaction.reply({
       components: [buildPanelInicio()],
@@ -40,7 +75,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     return;
   }
 
-  // ---- Botones dentro del panel ----
   if (interaction.isButton()) {
     if (interaction.customId === 'btn_entrar_servicio') {
       await interaction.reply({ content: '🚔 Entraste en servicio.', ephemeral: true });
@@ -51,7 +85,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     return;
   }
 
-  // ---- Select menu dentro del panel ----
   if (interaction.isStringSelectMenu() && interaction.customId === 'select_rol') {
     const elegido = interaction.values[0];
     await interaction.reply({ content: `Elegiste: **${elegido}**`, ephemeral: true });
