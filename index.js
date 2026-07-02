@@ -6,10 +6,6 @@ const {
   Events,
   MessageFlags,
   ContainerBuilder,
-  SeparatorSpacingSize,
-  ButtonBuilder,
-  ButtonStyle,
-  StringSelectMenuBuilder,
   ActivityType,
   REST,
   Routes,
@@ -24,15 +20,44 @@ const client = new Client({
 
 // ---------- CONFIG RÁPIDA ----------
 const COLOR_ESTADO = 0x1f3a5f;
-const ESTADO_BOT = { nombre: 'vigilando el estado 👮', tipo: ActivityType.Playing };
-// ------------------------------------
+const NOMBRE_SERVER = 'Medellín Roleplay';
 
-// Se registra solo cada vez que el bot arranca. No hace falta correr nada a mano.
+// Mínimo 15 estados, rotan cada 15 segundos.
+const ESTADOS = [
+  { nombre: `vigilando ${NOMBRE_SERVER} 👮`, tipo: ActivityType.Playing },
+  { nombre: 'las calles de Medellín', tipo: ActivityType.Watching },
+  { nombre: 'reportes de la comuna', tipo: ActivityType.Watching },
+  { nombre: 'la radio de la policía', tipo: ActivityType.Listening },
+  { nombre: 'patrullando El Poblado', tipo: ActivityType.Playing },
+  { nombre: 'el orden público', tipo: ActivityType.Watching },
+  { nombre: 'llamadas al 123', tipo: ActivityType.Listening },
+  { nombre: 'las cámaras de tránsito', tipo: ActivityType.Watching },
+  { nombre: 'controlando la ciudad', tipo: ActivityType.Playing },
+  { nombre: 'el turno de guardia', tipo: ActivityType.Competing },
+  { nombre: 'los reportes de la alcaldía', tipo: ActivityType.Watching },
+  { nombre: 'el tráfico de la Regional', tipo: ActivityType.Watching },
+  { nombre: 'novedades del cuadrante', tipo: ActivityType.Playing },
+  { nombre: 'el parte diario', tipo: ActivityType.Listening },
+  { nombre: 'a los ciudadanos de Medellín', tipo: ActivityType.Watching },
+];
+
+let indiceEstado = 0;
+
+function rotarEstado() {
+  const estado = ESTADOS[indiceEstado];
+  client.user.setPresence({
+    activities: [{ name: estado.nombre, type: estado.tipo }],
+    status: 'online',
+  });
+  indiceEstado = (indiceEstado + 1) % ESTADOS.length;
+}
+
+// ---------- Registro del comando (se hace solo, no hace falta correr nada a mano) ----------
 async function registrarComandos() {
-  const comandosGlobales = [
+  const comandos = [
     new SlashCommandBuilder()
       .setName('estado')
-      .setDescription('Panel de rol (estado/policía)')
+      .setDescription('Muestra si el bot está encendido y qué está haciendo')
       .setIntegrationTypes(
         ApplicationIntegrationType.GuildInstall,
         ApplicationIntegrationType.UserInstall,
@@ -45,19 +70,15 @@ async function registrarComandos() {
   ].map((c) => c.toJSON());
 
   const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
-  await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), {
-    body: comandosGlobales,
-  });
-  console.log('✅ Comando /estado registrado (global).');
+  await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: comandos });
+  console.log('✅ /estado registrado (global).');
 }
 
 client.once(Events.ClientReady, async (c) => {
   console.log(`✅ Conectado como ${c.user.tag}`);
 
-  c.user.setPresence({
-    activities: [{ name: ESTADO_BOT.nombre, type: ESTADO_BOT.tipo }],
-    status: 'online',
-  });
+  rotarEstado();
+  setInterval(rotarEstado, 15000);
 
   try {
     await registrarComandos();
@@ -68,60 +89,34 @@ client.once(Events.ClientReady, async (c) => {
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isChatInputCommand() && interaction.commandName === 'estado') {
+    const latencia = Math.round(client.ws.ping);
+    const uptime = formatearUptime(client.uptime);
+    const actividadActual = client.user.presence.activities[0]?.name ?? 'sin actividad';
+
+    const container = new ContainerBuilder()
+      .setAccentColor(COLOR_ESTADO)
+      .addTextDisplayComponents((td) =>
+        td.setContent(
+          `## 🟢 Bot en línea — ${NOMBRE_SERVER}\n` +
+            `**Haciendo ahora:** ${actividadActual}\n` +
+            `**Latencia:** ${latencia}ms\n` +
+            `**Tiempo activo:** ${uptime}\n` +
+            `**Servidores conectados:** ${client.guilds.cache.size}`,
+        ),
+      );
+
     await interaction.reply({
-      components: [buildPanelInicio()],
+      components: [container],
       flags: MessageFlags.IsComponentsV2,
     });
-    return;
-  }
-
-  if (interaction.isButton()) {
-    if (interaction.customId === 'btn_entrar_servicio') {
-      await interaction.reply({ content: '🚔 Entraste en servicio.', ephemeral: true });
-    }
-    if (interaction.customId === 'btn_salir_servicio') {
-      await interaction.reply({ content: '🚪 Saliste de servicio.', ephemeral: true });
-    }
-    return;
-  }
-
-  if (interaction.isStringSelectMenu() && interaction.customId === 'select_rol') {
-    const elegido = interaction.values[0];
-    await interaction.reply({ content: `Elegiste: **${elegido}**`, ephemeral: true });
   }
 });
 
-function buildPanelInicio() {
-  return new ContainerBuilder()
-    .setAccentColor(COLOR_ESTADO)
-    .addTextDisplayComponents((td) =>
-      td.setContent('## 🚓 Panel de Rol — Estado\nElegí una acción para empezar.'),
-    )
-    .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
-    .addActionRowComponents((row) =>
-      row.setComponents(
-        new ButtonBuilder()
-          .setCustomId('btn_entrar_servicio')
-          .setLabel('Entrar en servicio')
-          .setStyle(ButtonStyle.Success),
-        new ButtonBuilder()
-          .setCustomId('btn_salir_servicio')
-          .setLabel('Salir de servicio')
-          .setStyle(ButtonStyle.Danger),
-      ),
-    )
-    .addActionRowComponents((row) =>
-      row.setComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId('select_rol')
-          .setPlaceholder('Elegí tu rol...')
-          .addOptions(
-            { label: 'Policía', value: 'policia', emoji: '👮' },
-            { label: 'Civil', value: 'civil', emoji: '🙂' },
-            { label: 'Médico', value: 'medico', emoji: '⚕️' },
-          ),
-      ),
-    );
+function formatearUptime(ms) {
+  const segundos = Math.floor(ms / 1000) % 60;
+  const minutos = Math.floor(ms / (1000 * 60)) % 60;
+  const horas = Math.floor(ms / (1000 * 60 * 60));
+  return `${horas}h ${minutos}m ${segundos}s`;
 }
 
 client.login(process.env.DISCORD_TOKEN);
