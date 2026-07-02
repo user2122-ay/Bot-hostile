@@ -31,7 +31,7 @@ client.once(Events.ClientReady, (c) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  if (interaction.isChatInputCommand() && interaction.commandName === 'iniciar') {
+  if (interaction.isChatInputCommand() && interaction.commandName === 'estado') {
     await interaction.reply({
       components: [buildPanelInicio()],
       flags: MessageFlags.IsComponentsV2,
