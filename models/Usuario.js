@@ -5,6 +5,8 @@ const usuarioSchema = new mongoose.Schema({
   cartera: { type: Number, default: 0 },
   banco: { type: Number, default: 0 },
   ultimoCobro: { type: Date, default: null },
+  robloxUsername: { type: String, default: null },
+  robloxAvatarUrl: { type: String, default: null },
 });
 
 module.exports = mongoose.model('Usuario', usuarioSchema);
