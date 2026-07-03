@@ -7,10 +7,10 @@ const IMAGEN_BIENVENIDA =
 const NOMBRE_SERVER = 'Medellín Roleplay';
 
 // Cambiá estos IDs por los canales reales de tu server (click derecho en el canal -> Copiar ID)
-const CANAL_REGLAS_ID = '1520892876123279521';
-const CANAL_VERIFICACION_ID = '1520876417917653093';
-const CANAL_ROLES_ID = '000000000000000000';
-const CANAL_AYUDA_ID = '1520898102889025596';
+const CANAL_REGLAS_ID = '1396182828018044948';
+const CANAL_VERIFICACION_ID = '1396967509562888353';
+const CANAL_ROLES_ID = '1462959690630697068';
+const CANAL_AYUDA_ID = '1399548129816084681';
 
 // 6 colores, uno distinto por cada miembro que entra (rotan en círculo).
 const COLORES_BIENVENIDA = [
