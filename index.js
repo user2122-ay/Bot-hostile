@@ -1,8 +1,8 @@
-// index.js
 require('dotenv').config();
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, GatewayIntentBits, Collection } = require('discord.js');
+const { conectarMongo } = require('./utils/db');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
@@ -35,4 +35,11 @@ for (const file of eventFiles) {
   console.log(`📡 Evento cargado: ${event.name}`);
 }
 
-client.login(process.env.DISCORD_TOKEN);
+(async () => {
+  try {
+    await conectarMongo();
+  } catch (err) {
+    console.error('❌ Error conectando a MongoDB:', err);
+  }
+  client.login(process.env.DISCORD_TOKEN);
+})();
