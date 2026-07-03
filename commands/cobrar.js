@@ -54,7 +54,7 @@ module.exports = {
 
     await interaction.reply({
       components: [container],
-      flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+      flags: MessageFlags.IsComponentsV2,
     });
   },
 };
