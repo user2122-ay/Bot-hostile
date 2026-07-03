@@ -198,7 +198,6 @@ async function manejarCreacionTicket(interaction) {
     );
 
   await nuevoCanal.send({
-    content: `${interaction.user} <@&${dep.roleId}>`,
     components: [container],
     flags: MessageFlags.IsComponentsV2,
   });
