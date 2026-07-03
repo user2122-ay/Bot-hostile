@@ -14,7 +14,7 @@ const {
   AttachmentBuilder,
 } = require('discord.js');
 const { obtenerUsuario, obtenerIconoMoneda } = require('../utils/economia');
-const { DEPARTAMENTOS, CANAL_REGISTROS_ID } = require('../utils/ticketsConfig');
+const { DEPARTAMENTOS, CANAL_REGISTROS_ID, emojiMencion } = require('../utils/ticketsConfig');
 const { siguienteNumero } = require('../utils/tickets');
 const Ticket = require('../models/Ticket');
 const { generarTranscripcionHTML } = require('../utils/transcripcion');
@@ -185,7 +185,7 @@ async function manejarCreacionTicket(interaction) {
     .setAccentColor(dep.color)
     .addTextDisplayComponents((td) =>
       td.setContent(
-        `# ${dep.emoji} Ticket — ${dep.label}\n` +
+        `# ${emojiMencion(dep)} Ticket — ${dep.label}\n` +
           `Hola ${interaction.user}, un miembro de **${dep.label}** (<@&${dep.roleId}>) te va a atender pronto.\n\n` +
           `Contá tu situación con el mayor detalle posible mientras esperás.`,
       ),
