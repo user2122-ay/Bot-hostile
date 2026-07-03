@@ -17,15 +17,25 @@ module.exports = {
     const usuario = await obtenerUsuario(interaction.user.id);
     const icono = await obtenerIconoMoneda();
 
-    const container = new ContainerBuilder()
-      .setAccentColor(COLOR_ECONOMIA)
-      .addTextDisplayComponents((td) =>
-        td.setContent(
-          `## ${icono} Balance de ${interaction.user.username}\n` +
-            `**Cartera:** ${usuario.cartera.toLocaleString('es-CO')} ${icono}\n` +
-            `**Banco:** ${usuario.banco.toLocaleString('es-CO')} ${icono}`,
-        ),
-      )
+    const textoBalance =
+      `## ${icono} Balance de ${interaction.user.username}\n` +
+      `**Cartera:** ${usuario.cartera.toLocaleString('es-CO')} ${icono}\n` +
+      `**Banco:** ${usuario.banco.toLocaleString('es-CO')} ${icono}` +
+      (usuario.robloxUsername ? `\n**Roblox:** ${usuario.robloxUsername}` : '');
+
+    const container = new ContainerBuilder().setAccentColor(COLOR_ECONOMIA);
+
+    if (usuario.robloxAvatarUrl) {
+      container.addSectionComponents((section) =>
+        section
+          .addTextDisplayComponents((td) => td.setContent(textoBalance))
+          .setThumbnailAccessory((thumb) => thumb.setURL(usuario.robloxAvatarUrl)),
+      );
+    } else {
+      container.addTextDisplayComponents((td) => td.setContent(textoBalance));
+    }
+
+    container
       .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
       .addActionRowComponents((row) =>
         row.setComponents(
