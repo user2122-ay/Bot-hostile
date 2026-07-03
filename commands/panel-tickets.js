@@ -6,7 +6,7 @@ const {
   MessageFlags,
   PermissionFlagsBits,
 } = require('discord.js');
-const { DEPARTAMENTOS, CANAL_PANEL_ID } = require('../utils/ticketsConfig');
+const { DEPARTAMENTOS, CANAL_PANEL_ID, emojiMencion, emojiSelect } = require('../utils/ticketsConfig');
 const { contadoresActuales } = require('../utils/tickets');
 
 module.exports = {
@@ -23,7 +23,7 @@ module.exports = {
     const opciones = Object.entries(DEPARTAMENTOS).map(([id, dep]) => ({
       label: dep.label,
       value: id,
-      emoji: dep.emoji,
+      emoji: emojiSelect(dep),
     }));
 
     const container = new ContainerBuilder()
@@ -38,7 +38,7 @@ module.exports = {
       .addTextDisplayComponents((td) =>
         td.setContent(
           Object.entries(DEPARTAMENTOS)
-            .map(([id, dep]) => `${dep.emoji} **${dep.label}** — ${mapaContadores[id] ?? 0} ticket(s) creados`)
+            .map(([id, dep]) => `${emojiMencion(dep)} **${dep.label}** — ${mapaContadores[id] ?? 0} ticket(s) creados`)
             .join('\n'),
         ),
       )
