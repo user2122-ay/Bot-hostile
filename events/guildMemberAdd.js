@@ -1,7 +1,7 @@
 const { Events, ContainerBuilder, SeparatorSpacingSize, MessageFlags } = require('discord.js');
 
 // ---------- CONFIG ----------
-const CANAL_BIENVENIDA_ID = '1406071037850026125';
+const CANAL_BIENVENIDA_ID = '1405664369869590599';
 const IMAGEN_BIENVENIDA =
   'https://cdn.discordapp.com/attachments/1522383991729160404/1522384144921792592/BIENVENID_20260628_163525_00002-1.jpg';
 const NOMBRE_SERVER = 'Medellín Roleplay';
