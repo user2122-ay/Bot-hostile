@@ -4,8 +4,20 @@ const path = require('node:path');
 const { Client, GatewayIntentBits, Collection } = require('discord.js');
 const { conectarMongo } = require('./utils/db');
 
+process.on('unhandledRejection', (err) => {
+  console.error('❌ Unhandled Rejection:', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+});
+
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
 client.commands = new Collection();
@@ -35,11 +47,20 @@ for (const file of eventFiles) {
   console.log(`📡 Evento cargado: ${event.name}`);
 }
 
-(async () => {
+client.on('shardDisconnect', () => console.warn('⚠️ Desconectado de Discord, reconectando...'));
+client.on('shardReconnecting', () => console.log('🔄 Reconectando a Discord...'));
+client.on('error', (err) => console.error('❌ Client error:', err));
+
+async function iniciar() {
   try {
     await conectarMongo();
   } catch (err) {
-    console.error('❌ Error conectando a MongoDB:', err);
+    console.error('❌ Error conectando a MongoDB, reintentando en 10s...', err);
+    setTimeout(iniciar, 10000);
+    return;
   }
-  client.login(process.env.DISCORD_TOKEN);
-})();
+
+  await client.login(process.env.DISCORD_TOKEN);
+}
+
+iniciar();
