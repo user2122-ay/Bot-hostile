@@ -6,6 +6,8 @@ const ticketSchema = new mongoose.Schema({
   departamento: { type: String, required: true },
   numero: { type: Number, required: true },
   abierto: { type: Boolean, default: true },
+  reclamadoPor: { type: String, default: null },
+  reclamadoEn: { type: Date, default: null },
   creadoEn: { type: Date, default: Date.now },
   cerradoEn: { type: Date, default: null },
 });
