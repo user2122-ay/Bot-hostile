@@ -42,4 +42,22 @@ function emojiSelect(dep) {
   return { id: dep.emojiId, name: dep.emojiName };
 }
 
-module.exports = { DEPARTAMENTOS, CANAL_PANEL_ID, CANAL_REGISTROS_ID, emojiMencion, emojiSelect };
+// ¿Este member tiene el rol del departamento de ESE ticket? (para Reclamar)
+function esStaffDelDepartamento(member, dep) {
+  return member.roles.cache.has(dep.roleId);
+}
+
+// ¿Este member es staff de CUALQUIER departamento? (para "algún otro staff" al Cerrar)
+function esStaffDeAlgunDepartamento(member) {
+  return Object.values(DEPARTAMENTOS).some((dep) => member.roles.cache.has(dep.roleId));
+}
+
+module.exports = {
+  DEPARTAMENTOS,
+  CANAL_PANEL_ID,
+  CANAL_REGISTROS_ID,
+  emojiMencion,
+  emojiSelect,
+  esStaffDelDepartamento,
+  esStaffDeAlgunDepartamento,
+};
