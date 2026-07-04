@@ -111,6 +111,15 @@ module.exports = {
     }
 
     if (interaction.isModalSubmit()) {
+      if (interaction.customId === 'modal_cedula_1') {
+  await cedulaFlow.manejarModal1(interaction);
+  return;
+}
+
+if (interaction.customId === 'modal_cedula_2') {
+  await cedulaFlow.manejarModal2(interaction);
+  return;
+}
       if (interaction.customId === 'modal_verificacion_usuario') {
         await verificacion.manejarModalUsername(interaction);
         return;
@@ -132,14 +141,7 @@ module.exports = {
           await interaction.reply({ content: '❌ Ingresá un número válido mayor a 0.', ephemeral: true });
           return;
         }
-        if (interaction.customId === 'modal_cedula_1') {
-        await cedulaFlow.manejarModal1(interaction);
-        return;
-      }
-      if (interaction.customId === 'modal_cedula_2') {
-        await cedulaFlow.manejarModal2(interaction);
-        return;
-      }
+        
 
         const usuario = await obtenerUsuario(interaction.user.id);
         const icono = await obtenerIconoMoneda();
