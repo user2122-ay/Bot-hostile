@@ -26,6 +26,7 @@ const { siguienteNumero } = require('../utils/tickets');
 const Ticket = require('../models/Ticket');
 const { generarTranscripcionHTML } = require('../utils/transcripcion');
 const verificacion = require('../utils/verificacionFlow');
+const cedulaFlow = require('../utils/cedulaFlow');
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -102,6 +103,10 @@ module.exports = {
         await verificacion.manejarDecisionStaff(interaction, 'denegar');
         return;
       }
+      if (interaction.customId === 'cedula_continuar_2') {
+        await cedulaFlow.abrirModal2(interaction);
+        return;
+      }
       return;
     }
 
@@ -127,6 +132,14 @@ module.exports = {
           await interaction.reply({ content: '❌ Ingresá un número válido mayor a 0.', ephemeral: true });
           return;
         }
+        if (interaction.customId === 'modal_cedula_1') {
+        await cedulaFlow.manejarModal1(interaction);
+        return;
+      }
+      if (interaction.customId === 'modal_cedula_2') {
+        await cedulaFlow.manejarModal2(interaction);
+        return;
+      }
 
         const usuario = await obtenerUsuario(interaction.user.id);
         const icono = await obtenerIconoMoneda();
