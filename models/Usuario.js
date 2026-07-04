@@ -6,6 +6,7 @@ const usuarioSchema = new mongoose.Schema({
   banco: { type: Number, default: 0 },
   ultimoCobro: { type: Date, default: null },
   robloxUsername: { type: String, default: null },
+  robloxUserId: { type: String, default: null },
   robloxAvatarUrl: { type: String, default: null },
 });
 
