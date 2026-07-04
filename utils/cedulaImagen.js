@@ -6,14 +6,14 @@ const RUTA_FRENTE = path.join(
   __dirname,
   '..',
   'assets',
-  'file_00000000cb8c71f7a8ed28ccdfa6ab7d.png'
+  'cedula-frente.png'
 );
 
 const RUTA_ATRAS = path.join(
   __dirname,
   '..',
   'assets',
-  'file_000000004270722f92e18eb7c4119b1b.png'
+  'cedula-atras.png'
 );
 
 const COLOR_TEXTO = '#16264d';
