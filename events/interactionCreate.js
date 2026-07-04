@@ -78,8 +78,12 @@ module.exports = {
         await verificacion.iniciarVerificacion(interaction);
         return;
       }
-      if (interaction.customId === 'verificacion_check_codigo') {
-        await verificacion.manejarCheckCodigo(interaction);
+      if (interaction.customId === 'verificacion_confirmar_cuenta') {
+        await verificacion.abrirPreguntas1(interaction);
+        return;
+      }
+      if (interaction.customId === 'verificacion_negar_cuenta') {
+        await verificacion.manejarNegarCuenta(interaction);
         return;
       }
       if (interaction.customId === 'verificacion_abrir_preguntas_1') {
