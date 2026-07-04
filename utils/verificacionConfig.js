@@ -2,7 +2,7 @@ const CANAL_PANEL_VERIFICACION_ID = '1396967509562888353';
 const CANAL_REVISION_VERIFICACION_ID = '1398224643932033106';
 const ROL_STAFF_VERIFICACION_ID = '1426354376653668484';
 const ROL_NO_VERIFICADO_ID = '1396525795702345849';
-const ROL_VERIFICADO_ID = '1396525792787435580';
+const ROL_VERIFICADO_ID = '1396525747765645322';
 
 // "label" tiene que ser corto (límite de Discord: 45 caracteres) por eso algunas
 // preguntas largas quedan resumidas en el label, pero la pregunta completa ("pregunta")
