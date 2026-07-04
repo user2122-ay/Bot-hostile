@@ -1,8 +1,8 @@
 const path = require('node:path');
 const { createCanvas, loadImage } = require('@napi-rs/canvas');
 
-const RUTA_FRENTE = path.join(__dirname, '..', 'assets', 'archivo_00000000cb8c71f7a8ed28ccdfa6ab7d.png);
-const RUTA_ATRAS = path.join(__dirname, '..', 'assets', 'archivo_000000004270722f92e18eb7c4119b1b.png);
+const RUTA_FRENTE = path.join(__dirname, '..', 'assets', 'archivo_00000000cb8c71f7a8ed28ccdfa6ab7d.png' );
+const RUTA_ATRAS = path.join(__dirname, '..', 'assets', 'archivo_000000004270722f92e18eb7c4119b1b.png' );
 const COLOR_TEXTO = '#16264d';
 
 function ajustarFuente(ctx, texto, maxWidth, tamanioInicial, fontFamily, estilo) {
