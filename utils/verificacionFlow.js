@@ -18,14 +18,7 @@ const {
   ROL_VERIFICADO_ID,
   PREGUNTAS,
 } = require('./verificacionConfig');
-const { obtenerUsuarioRoblox, obtenerDescripcionRoblox, obtenerAvatarBustoRoblox } = require('./roblox');
-
-function generarCodigo() {
-  const caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let codigo = 'MDRP-';
-  for (let i = 0; i < 6; i++) codigo += caracteres[Math.floor(Math.random() * caracteres.length)];
-  return codigo;
-}
+const { obtenerUsuarioRoblox, obtenerAvatarBustoRoblox } = require('./roblox');
 
 // ---- Paso 1: click en "Verificarse" ----
 async function iniciarVerificacion(interaction) {
@@ -34,18 +27,8 @@ async function iniciarVerificacion(interaction) {
     return;
   }
 
-  const pendiente = await VerificacionPendiente.findOne({ userId: interaction.user.id });
-  if (pendiente) {
-    const antiguedadMin = (Date.now() - pendiente.creadoEn.getTime()) / 60000;
-    if (antiguedadMin < 30) {
-      await interaction.reply({
-        content: '⚠️ Ya tenés una verificación en curso. Si te quedaste trabado, esperá unos minutos y volvé a tocar el botón para reiniciar.',
-        ephemeral: true,
-      });
-      return;
-    }
-    await pendiente.deleteOne(); // quedó vieja/abandonada, la limpiamos y dejamos reintentar
-  }
+  // Reinicia cualquier intento anterior sin terminar.
+  await VerificacionPendiente.deleteOne({ userId: interaction.user.id });
 
   const modal = new ModalBuilder().setCustomId('modal_verificacion_usuario').setTitle('Verificación — Roblox');
   const input = new TextInputBuilder()
@@ -58,7 +41,7 @@ async function iniciarVerificacion(interaction) {
   await interaction.showModal(modal);
 }
 
-// ---- Paso 2: recibe el usuario de Roblox, genera el código ----
+// ---- Paso 2: recibe el usuario de Roblox, muestra el avatar para confirmar ----
 async function manejarModalUsername(interaction) {
   await interaction.deferReply({ ephemeral: true });
 
@@ -70,53 +53,64 @@ async function manejarModalUsername(interaction) {
     return;
   }
 
-  const codigo = generarCodigo();
+  const yaVerificado = await Usuario.findOne({ robloxUserId: String(usuarioRoblox.id) });
+  if (yaVerificado) {
+    await interaction.editReply(
+      '❌ Esa cuenta de Roblox ya está vinculada a otro usuario verificado. Si creés que es un error, abrí un ticket con el staff.',
+    );
+    return;
+  }
 
-  await VerificacionPendiente.create({
-    userId: interaction.user.id,
-    robloxUsername: usuarioRoblox.name,
-    robloxUserId: String(usuarioRoblox.id),
-    codigo,
-    respuestas: [],
-  });
+  const avatarUrl = await obtenerAvatarBustoRoblox(usuarioRoblox.id);
 
-  const boton = new ButtonBuilder().setCustomId('verificacion_check_codigo').setLabel('Ya puse el código, continuar').setStyle(ButtonStyle.Success);
+  await VerificacionPendiente.findOneAndUpdate(
+    { userId: interaction.user.id },
+    {
+      userId: interaction.user.id,
+      robloxUsername: usuarioRoblox.name,
+      robloxUserId: String(usuarioRoblox.id),
+      avatarUrl,
+      respuestas: [],
+    },
+    { upsert: true },
+  );
 
-  await interaction.editReply({
-    content:
-      `👤 Usuario detectado: **${usuarioRoblox.name}**\n\n` +
-      `Poné este código **exacto** en la descripción de tu perfil de Roblox:\n\`\`\`${codigo}\`\`\`\n` +
-      `Cuando lo hayas guardado, tocá el botón de abajo.`,
-    components: [new ActionRowBuilder().addComponents(boton)],
-  });
+  const container = new ContainerBuilder().setAccentColor(0x1f3a5f);
+  const textoConfirmacion = `## ¿Esta es tu cuenta?\n**Usuario de Roblox:** ${usuarioRoblox.name}`;
+
+  if (avatarUrl) {
+    container.addSectionComponents((section) =>
+      section
+        .addTextDisplayComponents((td) => td.setContent(textoConfirmacion))
+        .setThumbnailAccessory((thumb) => thumb.setURL(avatarUrl)),
+    );
+  } else {
+    container.addTextDisplayComponents((td) => td.setContent(textoConfirmacion));
+  }
+
+  container
+    .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
+    .addActionRowComponents((row) =>
+      row.setComponents(
+        new ButtonBuilder().setCustomId('verificacion_confirmar_cuenta').setLabel('Sí, es mi cuenta').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId('verificacion_negar_cuenta').setLabel('No, es otra').setStyle(ButtonStyle.Danger),
+      ),
+    );
+
+  await interaction.editReply({ components: [container], flags: MessageFlags.IsComponentsV2 });
 }
 
-// ---- Paso 3: chequea que el código esté en el perfil ----
-async function manejarCheckCodigo(interaction) {
-  await interaction.deferUpdate();
+// ---- Paso 3: usuario dice que NO es su cuenta ----
+async function manejarNegarCuenta(interaction) {
+  await VerificacionPendiente.deleteOne({ userId: interaction.user.id });
 
-  const pendiente = await VerificacionPendiente.findOne({ userId: interaction.user.id });
-  if (!pendiente) {
-    await interaction.editReply({ content: '❌ No encontré tu verificación pendiente, empezá de nuevo desde el panel.', components: [] });
-    return;
-  }
+  const container = new ContainerBuilder()
+    .setAccentColor(0xe74c3c)
+    .addTextDisplayComponents((td) =>
+      td.setContent('❌ Cancelado. Volvé a tocar **Verificarse** en el panel para intentarlo de nuevo con el usuario correcto.'),
+    );
 
-  const descripcion = await obtenerDescripcionRoblox(pendiente.robloxUserId);
-
-  if (!descripcion.includes(pendiente.codigo)) {
-    const boton = new ButtonBuilder().setCustomId('verificacion_check_codigo').setLabel('Ya puse el código, continuar').setStyle(ButtonStyle.Success);
-    await interaction.editReply({
-      content: `❌ Todavía no encuentro el código \`${pendiente.codigo}\` en tu perfil. Guardalo bien y volvé a intentar.`,
-      components: [new ActionRowBuilder().addComponents(boton)],
-    });
-    return;
-  }
-
-  const boton = new ButtonBuilder().setCustomId('verificacion_abrir_preguntas_1').setLabel('Continuar con las preguntas de rol').setStyle(ButtonStyle.Primary);
-  await interaction.editReply({
-    content: '✅ Código verificado. Ahora respondé unas preguntas sobre roleplay.',
-    components: [new ActionRowBuilder().addComponents(boton)],
-  });
+  await interaction.update({ components: [container], flags: MessageFlags.IsComponentsV2 });
 }
 
 // ---- Paso 4: primer modal de preguntas (1-5) ----
@@ -169,7 +163,6 @@ async function manejarModalPreguntas2(interaction) {
   pendiente.respuestas = [...pendiente.respuestas, ...respuestasFinales];
   await pendiente.save();
 
-  const avatarUrl = await obtenerAvatarBustoRoblox(pendiente.robloxUserId);
   const canalRevision = await interaction.client.channels.fetch(CANAL_REVISION_VERIFICACION_ID);
   const textoPreguntas = PREGUNTAS.map((p, i) => `**${i + 1}. ${p.pregunta}**\n${pendiente.respuestas[i]}`).join('\n\n');
 
@@ -179,9 +172,9 @@ async function manejarModalPreguntas2(interaction) {
       td.setContent(`# 📋 Solicitud de verificación\n**Usuario Discord:** ${interaction.user} (\`${interaction.user.id}\`)\n**Usuario Roblox:** ${pendiente.robloxUsername}`),
     );
 
-  if (avatarUrl) {
+  if (pendiente.avatarUrl) {
     container.addSectionComponents((section) =>
-      section.addTextDisplayComponents((td) => td.setContent('Avatar de Roblox:')).setThumbnailAccessory((thumb) => thumb.setURL(avatarUrl)),
+      section.addTextDisplayComponents((td) => td.setContent('Avatar de Roblox:')).setThumbnailAccessory((thumb) => thumb.setURL(pendiente.avatarUrl)),
     );
   }
 
@@ -218,9 +211,7 @@ async function manejarDecisionStaff(interaction, decision) {
     return;
   }
 
-  const avatarUrl = await obtenerAvatarBustoRoblox(pendiente.robloxUserId);
   const textoPreguntas = PREGUNTAS.map((p, i) => `**${i + 1}. ${p.pregunta}**\n${pendiente.respuestas[i] ?? '—'}`).join('\n\n');
-
   const colorNuevo = decision === 'aceptar' ? 0x27ae60 : 0xe74c3c;
   const textoEstado = decision === 'aceptar' ? `✅ Aceptado por ${interaction.user}` : `❌ Denegado por ${interaction.user}`;
 
@@ -230,9 +221,9 @@ async function manejarDecisionStaff(interaction, decision) {
       td.setContent(`# 📋 Solicitud de verificación\n**Usuario Discord:** <@${userId}> (\`${userId}\`)\n**Usuario Roblox:** ${pendiente.robloxUsername}`),
     );
 
-  if (avatarUrl) {
+  if (pendiente.avatarUrl) {
     container.addSectionComponents((section) =>
-      section.addTextDisplayComponents((td) => td.setContent('Avatar de Roblox:')).setThumbnailAccessory((thumb) => thumb.setURL(avatarUrl)),
+      section.addTextDisplayComponents((td) => td.setContent('Avatar de Roblox:')).setThumbnailAccessory((thumb) => thumb.setURL(pendiente.avatarUrl)),
     );
   }
 
@@ -262,7 +253,7 @@ async function manejarDecisionStaff(interaction, decision) {
 
     await Usuario.findOneAndUpdate(
       { userId },
-      { userId, robloxUsername: pendiente.robloxUsername, robloxAvatarUrl: avatarUrl },
+      { userId, robloxUsername: pendiente.robloxUsername, robloxUserId: pendiente.robloxUserId, robloxAvatarUrl: pendiente.avatarUrl },
       { upsert: true },
     );
   }
@@ -281,7 +272,7 @@ async function manejarDecisionStaff(interaction, decision) {
 module.exports = {
   iniciarVerificacion,
   manejarModalUsername,
-  manejarCheckCodigo,
+  manejarNegarCuenta,
   abrirPreguntas1,
   manejarModalPreguntas1,
   abrirPreguntas2,
