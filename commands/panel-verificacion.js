@@ -18,10 +18,9 @@ module.exports = {
             `Para entrar al server necesitás verificar tu cuenta de Roblox:\n\n` +
             `**1.** Tocá **Verificarse**.\n` +
             `**2.** Escribí tu usuario de Roblox.\n` +
-            `**3.** Te damos un código, pegalo en la descripción de tu perfil de Roblox.\n` +
-            `**4.** Confirmá que lo pusiste.\n` +
-            `**5.** Respondé 8 preguntas cortas sobre roleplay.\n` +
-            `**6.** El staff revisa tu formulario y te avisa por mensaje directo.`,
+            `**3.** Confirmá que esa cuenta es tuya (te mostramos tu avatar).\n` +
+            `**4.** Respondé 8 preguntas cortas sobre roleplay.\n` +
+            `**5.** El staff revisa tu formulario y te avisa por mensaje directo.`,
         ),
       )
       .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
