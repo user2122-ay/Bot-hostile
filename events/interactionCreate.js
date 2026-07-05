@@ -27,6 +27,7 @@ const Ticket = require('../models/Ticket');
 const { generarTranscripcionHTML } = require('../utils/transcripcion');
 const verificacion = require('../utils/verificacionFlow');
 const cedulaFlow = require('../utils/cedulaFlow');
+const Cedula = require('../models/Cedula');
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -105,6 +106,29 @@ module.exports = {
       }
       if (interaction.customId === 'cedula_continuar_2') {
         await cedulaFlow.abrirModal2(interaction);
+        return;
+      }
+      if (interaction.customId.startsWith('cedula_reverso_')) {
+        const userId = interaction.customId.replace('cedula_reverso_', '');
+        const cedula = await Cedula.findOne({ userId });
+        if (!cedula) {
+          await interaction.reply({ content: '❌ No encontré esa cédula.', ephemeral: true });
+          return;
+        }
+        const mensaje = await cedulaFlow.construirMensajeAtras(cedula);
+        await interaction.reply(mensaje);
+        return;
+      }
+
+      if (interaction.customId.startsWith('cedula_frente_')) {
+        const userId = interaction.customId.replace('cedula_frente_', '');
+        const cedula = await Cedula.findOne({ userId });
+        if (!cedula) {
+          await interaction.reply({ content: '❌ No encontré esa cédula.', ephemeral: true });
+          return;
+        }
+        const mensaje = await cedulaFlow.construirMensajeFrente(cedula);
+        await interaction.reply(mensaje);
         return;
       }
       return;
