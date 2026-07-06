@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const Sueldo = require('../models/Sueldo');
 const { esAdminEconomia } = require('../utils/permisos');
+const { enviarLogEconomia } = require('../utils/economiaLogs');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -22,6 +23,8 @@ module.exports = {
       return;
     }
 
-    await interaction.reply({ content: `✅ Se quitó el sueldo del rol ${rol}.`, ephemeral: true });
+    await interaction.reply({ content: `🗑️ Se quitó el sueldo del rol ${rol}.`, ephemeral: true });
+
+    await enviarLogEconomia(interaction.client, '🗑️ Sueldo removido', `**Staff:** ${interaction.user}\n**Rol:** ${rol}`);
   },
 };
