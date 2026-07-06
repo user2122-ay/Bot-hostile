@@ -1,15 +1,14 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { obtenerUsuario, obtenerIconoMoneda } = require('../utils/economia');
 const { esAdminEconomia } = require('../utils/permisos');
+const { enviarLogEconomia } = require('../utils/economiaLogs');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('añadir-dinero')
     .setDescription('Agregar dinero a la cartera de un usuario (staff economía)')
     .addUserOption((opt) => opt.setName('usuario').setDescription('Usuario a modificar').setRequired(true))
-    .addIntegerOption((opt) =>
-      opt.setName('cantidad').setDescription('Cantidad a agregar').setRequired(true).setMinValue(1),
-    ),
+    .addIntegerOption((opt) => opt.setName('cantidad').setDescription('Cantidad a agregar').setRequired(true).setMinValue(1)),
 
   async execute(interaction) {
     if (!esAdminEconomia(interaction)) {
@@ -26,8 +25,14 @@ module.exports = {
 
     const icono = await obtenerIconoMoneda();
     await interaction.reply({
-      content: `✅ Se agregaron ${cantidad.toLocaleString('es-CO')} ${icono} a la cartera de ${objetivo}. Nuevo balance: ${usuario.cartera.toLocaleString('es-CO')} ${icono}`,
+      content: `💵 Se agregaron ${cantidad.toLocaleString('es-CO')} ${icono} a la cartera de ${objetivo}. Nuevo balance: ${usuario.cartera.toLocaleString('es-CO')} ${icono}`,
       ephemeral: true,
     });
+
+    await enviarLogEconomia(
+      interaction.client,
+      '💵 Dinero añadido',
+      `**Staff:** ${interaction.user}\n**Usuario:** ${objetivo}\n**Cantidad:** +${cantidad.toLocaleString('es-CO')} ${icono}\n**Nuevo balance:** ${usuario.cartera.toLocaleString('es-CO')} ${icono}`,
+    );
   },
 };
