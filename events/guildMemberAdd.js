@@ -1,7 +1,7 @@
 const { Events, ContainerBuilder, SeparatorSpacingSize, MessageFlags } = require('discord.js');
 
 // ---------- CONFIG ----------
-const CANAL_BIENVENIDA_ID = '1405664369869590599';
+const CANAL_BIENVENIDA_ID = '1528143378892587199';
 const IMAGEN_BIENVENIDA =
   'https://cdn.discordapp.com/attachments/1528212860415643658/1528424008935018666/BIENVENID_20260628_163525_00002.jpg?ex=6a5e3f48&is=6a5cedc8&hm=4506a511dffa19bedaa46682e09bc40398ec15a3f32ad0c8e86e715750d62fb4&';
 const NOMBRE_SERVER = 'Medellín Roleplay';
@@ -10,7 +10,7 @@ const NOMBRE_SERVER = 'Medellín Roleplay';
 const CANAL_REGLAS_ID = '1396182828018044948';
 const CANAL_VERIFICACION_ID = '1396967509562888353';
 const CANAL_ROLES_ID = '1462959690630697068';
-const CANAL_AYUDA_ID = '1399548129816084681';
+const CANAL_AYUDA_ID = '1527491537645076480';
 
 // 6 colores, uno distinto por cada miembro que entra (rotan en círculo).
 const COLORES_BIENVENIDA = [
