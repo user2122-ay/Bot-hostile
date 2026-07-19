@@ -3,7 +3,7 @@ const { Events, ContainerBuilder, SeparatorSpacingSize, MessageFlags } = require
 // ---------- CONFIG ----------
 const CANAL_BIENVENIDA_ID = '1405664369869590599';
 const IMAGEN_BIENVENIDA =
-  'https://cdn.discordapp.com/attachments/1522383991729160404/1522384144921792592/BIENVENID_20260628_163525_00002-1.jpg';
+  'https://cdn.discordapp.com/attachments/1528212860415643658/1528424008935018666/BIENVENID_20260628_163525_00002.jpg?ex=6a5e3f48&is=6a5cedc8&hm=4506a511dffa19bedaa46682e09bc40398ec15a3f32ad0c8e86e715750d62fb4&';
 const NOMBRE_SERVER = 'Medellín Roleplay';
 
 // Cambiá estos IDs por los canales reales de tu server (click derecho en el canal -> Copiar ID)
