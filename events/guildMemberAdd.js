@@ -3,16 +3,14 @@ const { Events, ContainerBuilder, SeparatorSpacingSize, MessageFlags } = require
 // ---------- CONFIG ----------
 const CANAL_BIENVENIDA_ID = '1528143378892587199';
 const IMAGEN_BIENVENIDA =
-  'https://cdn.discordapp.com/attachments/1528213092931207269/1528471201423425536/BIENVENID_20260628_163525_00002.jpg?ex=6a67a5bc&is=6a66543c&hm=31031cf5bef00690a91ba5d9d596a7ca8ed97456d9a10fcc71cd4c2f9f20fba3&';
+  'https://cdn.discordapp.com/attachments/1528212860415643658/1528424008935018666/BIENVENID_20260628_163525_00002.jpg?ex=6a5e3f48&is=6a5cedc8&hm=4506a511dffa19bedaa46682e09bc40398ec15a3f32ad0c8e86e715750d62fb4&';
 const NOMBRE_SERVER = 'Medellín Roleplay';
 
-// Cambiá estos IDs por los canales reales de tu server (click derecho en el canal -> Copiar ID)
 const CANAL_REGLAS_ID = '1396182828018044948';
 const CANAL_VERIFICACION_ID = '1396967509562888353';
 const CANAL_ROLES_ID = '1462959690630697068';
 const CANAL_AYUDA_ID = '1527491537645076480';
 
-// 6 colores, uno distinto por cada miembro que entra (rotan en círculo).
 const COLORES_BIENVENIDA = [
   0x1f3a5f, // azul
   0xc0392b, // rojo
@@ -45,9 +43,7 @@ module.exports = {
           ),
         )
 
-        .addSeparatorComponents((sep) =>
-          sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true),
-        )
+        .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
 
         // ---- Imagen de bienvenida ----
         .addMediaGalleryComponents((gallery) =>
@@ -56,9 +52,7 @@ module.exports = {
           ),
         )
 
-        .addSeparatorComponents((sep) =>
-          sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true),
-        )
+        .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
 
         // ---- Instrucciones ----
         .addTextDisplayComponents((td) =>
@@ -72,9 +66,7 @@ module.exports = {
           ),
         )
 
-        .addSeparatorComponents((sep) =>
-          sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true),
-        )
+        .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
 
         // ---- Cierre ----
         .addTextDisplayComponents((td) =>
@@ -88,7 +80,11 @@ module.exports = {
         flags: MessageFlags.IsComponentsV2,
       });
     } catch (err) {
-      console.error('❌ Error mandando bienvenida:', err);
+      if (err.code === 10003) {
+        console.warn(`⚠️ Canal de bienvenida (${CANAL_BIENVENIDA_ID}) no existe o el bot no tiene acceso.`);
+      } else {
+        console.error('❌ Error mandando bienvenida:', err);
+      }
     }
   },
 };
