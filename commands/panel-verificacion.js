@@ -14,7 +14,7 @@ module.exports = {
       .setAccentColor(0x1f3a5f)
       .addTextDisplayComponents((td) =>
         td.setContent(
-          `# ✅ Verificación — Medellín Roleplay\n` +
+          `# ✅ Verificación — La Nación RP\n` +
             `Para entrar al server necesitás verificar tu cuenta de Roblox:\n\n` +
             `**1.** Tocá **Verificarse**.\n` +
             `**2.** Escribí tu usuario de Roblox.\n` +
