@@ -72,7 +72,7 @@ module.exports = {
       }
 
       if (interaction.customId === 'ticket_cerrar') {
-        await manejarCierreTicket(interaction);
+        await mostrarModalCierre(interaction);
         return;
       }
 
@@ -159,6 +159,11 @@ module.exports = {
 
       if (interaction.customId.startsWith('modal_ticket_motivo_')) {
         await manejarCreacionTicket(interaction);
+        return;
+      }
+
+      if (interaction.customId === 'modal_ticket_cierre') {
+        await manejarCierreTicket(interaction);
         return;
       }
 
@@ -353,6 +358,36 @@ async function manejarReclamoTicket(interaction) {
   await interaction.update({ components: [container], flags: MessageFlags.IsComponentsV2 });
 }
 
+async function mostrarModalCierre(interaction) {
+  const ticket = await Ticket.findOne({ canalId: interaction.channel.id, abierto: true });
+  if (!ticket) {
+    await interaction.reply({ content: '❌ Este canal no es un ticket abierto.', ephemeral: true });
+    return;
+  }
+
+  const dep = DEPARTAMENTOS[ticket.departamento];
+
+  // Solo el staff del departamento dueño del ticket puede cerrarlo.
+  if (!esStaffDelDepartamento(interaction.member, dep)) {
+    await interaction.reply({ content: `❌ Solo el staff de **${dep.label}** puede cerrar este ticket.`, ephemeral: true });
+    return;
+  }
+
+  const modal = new ModalBuilder().setCustomId('modal_ticket_cierre').setTitle('Cerrar ticket');
+
+  const inputRazon = new TextInputBuilder()
+    .setCustomId('razon')
+    .setLabel('¿Por qué se cierra este ticket?')
+    .setStyle(TextInputStyle.Paragraph)
+    .setPlaceholder('Ej: Se resolvió la duda / Se aplicó la sanción / Se completó la solicitud...')
+    .setMinLength(5)
+    .setMaxLength(1000)
+    .setRequired(true);
+
+  modal.addComponents(new ActionRowBuilder().addComponents(inputRazon));
+  await interaction.showModal(modal);
+}
+
 async function manejarCierreTicket(interaction) {
   const ticket = await Ticket.findOne({ canalId: interaction.channel.id, abierto: true });
   if (!ticket) {
@@ -360,11 +395,15 @@ async function manejarCierreTicket(interaction) {
     return;
   }
 
-  const puedeCerrar = interaction.user.id === ticket.reclamadoPor || esStaffDeAlgunDepartamento(interaction.member);
-  if (!puedeCerrar) {
-    await interaction.reply({ content: '❌ Solo el staff que reclamó este ticket, u otro miembro del staff, puede cerrarlo.', ephemeral: true });
+  const dep = DEPARTAMENTOS[ticket.departamento];
+
+  // Se vuelve a validar acá por si el modal quedó abierto y el ticket cambió mientras tanto.
+  if (!esStaffDelDepartamento(interaction.member, dep)) {
+    await interaction.reply({ content: `❌ Solo el staff de **${dep.label}** puede cerrar este ticket.`, ephemeral: true });
     return;
   }
+
+  const razonCierre = interaction.fields.getTextInputValue('razon');
 
   await interaction.deferReply();
   await interaction.editReply('🔒 Cerrando ticket y generando transcripción...');
@@ -374,14 +413,13 @@ async function manejarCierreTicket(interaction) {
   const archivo = new AttachmentBuilder(Buffer.from(html, 'utf-8'), { name: nombreArchivo });
   const componenteArchivo = new FileBuilder().setURL(`attachment://${nombreArchivo}`);
 
-  const dep = DEPARTAMENTOS[ticket.departamento];
   const canalRegistros = await interaction.client.channels.fetch(CANAL_REGISTROS_ID);
 
   const container = new ContainerBuilder()
     .setAccentColor(dep ? dep.color : 0x1f3a5f)
     .addTextDisplayComponents((td) =>
       td.setContent(
-        `## 📄 Ticket cerrado\n**Departamento:** ${dep ? dep.label : ticket.departamento}\n**Número:** #${String(ticket.numero).padStart(4, '0')}\n**Usuario:** <@${ticket.usuarioId}>\n**Motivo:** ${ticket.motivo || 'No especificado.'}\n**Reclamado por:** ${ticket.reclamadoPor ? `<@${ticket.reclamadoPor}>` : 'nadie lo reclamó'}\n**Cerrado por:** ${interaction.user}\n**Abierto el:** ${ticket.creadoEn.toLocaleString('es-CO')}`,
+        `## 📄 Ticket cerrado\n**Departamento:** ${dep ? dep.label : ticket.departamento}\n**Número:** #${String(ticket.numero).padStart(4, '0')}\n**Usuario:** <@${ticket.usuarioId}>\n**Motivo de apertura:** ${ticket.motivo || 'No especificado.'}\n**Reclamado por:** ${ticket.reclamadoPor ? `<@${ticket.reclamadoPor}>` : 'nadie lo reclamó'}\n**Cerrado por:** ${interaction.user}\n**Razón de cierre:** ${razonCierre}\n**Abierto el:** ${ticket.creadoEn.toLocaleString('es-CO')}`,
       ),
     )
     .addFileComponents(componenteArchivo);
@@ -390,6 +428,7 @@ async function manejarCierreTicket(interaction) {
 
   ticket.abierto = false;
   ticket.cerradoEn = new Date();
+  ticket.razonCierre = razonCierre;
   await ticket.save();
 
   await interaction.channel.send('🗑️ Este canal se va a borrar en 5 segundos.');
