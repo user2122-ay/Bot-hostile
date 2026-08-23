@@ -52,7 +52,7 @@ module.exports = {
     }
 
     if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_categoria') {
-      await manejarCreacionTicket(interaction);
+      await mostrarModalMotivo(interaction);
       return;
     }
 
@@ -136,14 +136,14 @@ module.exports = {
 
     if (interaction.isModalSubmit()) {
       if (interaction.customId === 'modal_cedula_1') {
-  await cedulaFlow.manejarModal1(interaction);
-  return;
-}
+        await cedulaFlow.manejarModal1(interaction);
+        return;
+      }
 
-if (interaction.customId === 'modal_cedula_2') {
-  await cedulaFlow.manejarModal2(interaction);
-  return;
-}
+      if (interaction.customId === 'modal_cedula_2') {
+        await cedulaFlow.manejarModal2(interaction);
+        return;
+      }
       if (interaction.customId === 'modal_verificacion_usuario') {
         await verificacion.manejarModalUsername(interaction);
         return;
@@ -157,6 +157,11 @@ if (interaction.customId === 'modal_cedula_2') {
         return;
       }
 
+      if (interaction.customId.startsWith('modal_ticket_motivo_')) {
+        await manejarCreacionTicket(interaction);
+        return;
+      }
+
       if (interaction.customId === 'modal_depositar' || interaction.customId === 'modal_retirar') {
         const esDeposito = interaction.customId === 'modal_depositar';
         const cantidad = parseInt(interaction.fields.getTextInputValue('cantidad'), 10);
@@ -165,7 +170,6 @@ if (interaction.customId === 'modal_cedula_2') {
           await interaction.reply({ content: '❌ Ingresá un número válido mayor a 0.', ephemeral: true });
           return;
         }
-        
 
         const usuario = await obtenerUsuario(interaction.user.id);
         const icono = await obtenerIconoMoneda();
@@ -212,15 +216,77 @@ function construirBotonesTicket(ticket) {
   return new ActionRowBuilder().setComponents(botonReclamar, botonCerrar);
 }
 
+function construirEmbedTicket(dep, ticket, motivo, usuarioAbrioMencion) {
+  const numeroFormateado = String(ticket.numero).padStart(4, '0');
+  const fecha = ticket.creadoEn ? new Date(ticket.creadoEn) : new Date();
+
+  return new ContainerBuilder()
+    .setAccentColor(dep.color)
+    .addTextDisplayComponents((td) =>
+      td.setContent(
+        `# ${emojiMencion(dep)} Ticket #${numeroFormateado} — ${dep.label}\n` +
+          `Bienvenido/a ${usuarioAbrioMencion}. Un miembro de **${dep.label}** (<@&${dep.roleId}>) te va a atender pronto.`,
+      ),
+    )
+    .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
+    .addTextDisplayComponents((td) =>
+      td.setContent(`**📋 Motivo del ticket:**\n${motivo || 'No especificado.'}`),
+    )
+    .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
+    .addTextDisplayComponents((td) =>
+      td.setContent(
+        ticket.reclamadoPor ? `🙋 **Reclamado por** <@${ticket.reclamadoPor}>` : `⏳ **Sin reclamar todavía**`,
+      ),
+    )
+    .addTextDisplayComponents((td) => td.setContent(`-# Abierto el ${fecha.toLocaleString('es-CO')}`))
+    .addActionRowComponents(construirBotonesTicket(ticket));
+}
+
+async function mostrarModalMotivo(interaction) {
+  const departamentoId = interaction.values[0];
+  const dep = DEPARTAMENTOS[departamentoId];
+  if (!dep) {
+    await interaction.reply({ content: '❌ Departamento no válido.', ephemeral: true });
+    return;
+  }
+
+  const ticketExistente = await Ticket.findOne({ usuarioId: interaction.user.id, departamento: departamentoId, abierto: true });
+  if (ticketExistente) {
+    await interaction.reply({
+      content: `⚠️ Ya tenés un ticket abierto de **${dep.label}**: <#${ticketExistente.canalId}>`,
+      ephemeral: true,
+    });
+    return;
+  }
+
+  const modal = new ModalBuilder()
+    .setCustomId(`modal_ticket_motivo_${departamentoId}`)
+    .setTitle(`Ticket — ${dep.label}`);
+
+  const inputMotivo = new TextInputBuilder()
+    .setCustomId('motivo')
+    .setLabel('¿Cuál es el motivo de tu ticket?')
+    .setStyle(TextInputStyle.Paragraph)
+    .setPlaceholder('Contá tu situación con el mayor detalle posible...')
+    .setMinLength(10)
+    .setMaxLength(1000)
+    .setRequired(true);
+
+  modal.addComponents(new ActionRowBuilder().addComponents(inputMotivo));
+  await interaction.showModal(modal);
+}
+
 async function manejarCreacionTicket(interaction) {
   await interaction.deferReply({ ephemeral: true });
 
-  const departamentoId = interaction.values[0];
+  const departamentoId = interaction.customId.replace('modal_ticket_motivo_', '');
   const dep = DEPARTAMENTOS[departamentoId];
   if (!dep) {
     await interaction.editReply('❌ Departamento no válido.');
     return;
   }
+
+  const motivo = interaction.fields.getTextInputValue('motivo');
 
   const ticketExistente = await Ticket.findOne({ usuarioId: interaction.user.id, departamento: departamentoId, abierto: true });
   if (ticketExistente) {
@@ -245,16 +311,16 @@ async function manejarCreacionTicket(interaction) {
     ],
   });
 
-  const ticket = await Ticket.create({ canalId: nuevoCanal.id, usuarioId: interaction.user.id, departamento: departamentoId, numero, abierto: true });
+  const ticket = await Ticket.create({
+    canalId: nuevoCanal.id,
+    usuarioId: interaction.user.id,
+    departamento: departamentoId,
+    numero,
+    abierto: true,
+    motivo,
+  });
 
-  const container = new ContainerBuilder()
-    .setAccentColor(dep.color)
-    .addTextDisplayComponents((td) =>
-      td.setContent(`# ${emojiMencion(dep)} Ticket — ${dep.label}\nHola ${interaction.user}, un miembro de **${dep.label}** (<@&${dep.roleId}>) te va a atender pronto.\n\nContá tu situación con el mayor detalle posible mientras esperás.`),
-    )
-    .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
-    .addActionRowComponents(construirBotonesTicket(ticket));
-
+  const container = construirEmbedTicket(dep, ticket, motivo, interaction.user);
   const mensaje = await nuevoCanal.send({ components: [container], flags: MessageFlags.IsComponentsV2 });
   ticket.mensajeId = mensaje.id;
   await ticket.save();
@@ -283,14 +349,7 @@ async function manejarReclamoTicket(interaction) {
   ticket.reclamadoEn = new Date();
   await ticket.save();
 
-  const container = new ContainerBuilder()
-    .setAccentColor(dep.color)
-    .addTextDisplayComponents((td) =>
-      td.setContent(`# ${emojiMencion(dep)} Ticket — ${dep.label}\nHola <@${ticket.usuarioId}>, un miembro de **${dep.label}** (<@&${dep.roleId}>) te va a atender pronto.\n\nContá tu situación con el mayor detalle posible mientras esperás.\n\n🙋 **Reclamado por ${interaction.user}**`),
-    )
-    .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
-    .addActionRowComponents(construirBotonesTicket(ticket));
-
+  const container = construirEmbedTicket(dep, ticket, ticket.motivo, `<@${ticket.usuarioId}>`);
   await interaction.update({ components: [container], flags: MessageFlags.IsComponentsV2 });
 }
 
@@ -322,7 +381,7 @@ async function manejarCierreTicket(interaction) {
     .setAccentColor(dep ? dep.color : 0x1f3a5f)
     .addTextDisplayComponents((td) =>
       td.setContent(
-        `## 📄 Ticket cerrado\n**Departamento:** ${dep ? dep.label : ticket.departamento}\n**Número:** #${String(ticket.numero).padStart(4, '0')}\n**Usuario:** <@${ticket.usuarioId}>\n**Reclamado por:** ${ticket.reclamadoPor ? `<@${ticket.reclamadoPor}>` : 'nadie lo reclamó'}\n**Cerrado por:** ${interaction.user}\n**Abierto el:** ${ticket.creadoEn.toLocaleString('es-CO')}`,
+        `## 📄 Ticket cerrado\n**Departamento:** ${dep ? dep.label : ticket.departamento}\n**Número:** #${String(ticket.numero).padStart(4, '0')}\n**Usuario:** <@${ticket.usuarioId}>\n**Motivo:** ${ticket.motivo || 'No especificado.'}\n**Reclamado por:** ${ticket.reclamadoPor ? `<@${ticket.reclamadoPor}>` : 'nadie lo reclamó'}\n**Cerrado por:** ${interaction.user}\n**Abierto el:** ${ticket.creadoEn.toLocaleString('es-CO')}`,
       ),
     )
     .addFileComponents(componenteArchivo);
@@ -337,4 +396,4 @@ async function manejarCierreTicket(interaction) {
   setTimeout(() => {
     interaction.channel.delete().catch((err) => console.error('❌ Error borrando canal de ticket:', err));
   }, 5000);
-          }
+}
