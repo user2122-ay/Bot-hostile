@@ -8,7 +8,7 @@ const NOMBRE_SERVER = 'Medellín Roleplay';
 
 const CANAL_REGLAS_ID = '1531112187060555807';
 const CANAL_VERIFICACION_ID = '1531111985016475738';
-const CANAL_ROLES_ID = '1537955945781665832';
+const CANAL_ROLES_ID = '1537956027629183057';
 const CANAL_AYUDA_ID = '1536880178167291904';
 
 const COLORES_BIENVENIDA = [
@@ -38,7 +38,7 @@ module.exports = {
         // ---- Encabezado ----
         .addTextDisplayComponents((td) =>
           td.setContent(
-            `# 🚨 Bienvenido a ${NOMBRE_SERVER}\n` +
+            `# 🚨 Bienvenido a La Nación RP \n` +
               `¡Hola ${member}! Acabás de llegar a la ciudad. Ya somos **${member.guild.memberCount}** miembros en total.`,
           ),
         )
