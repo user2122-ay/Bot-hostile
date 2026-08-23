@@ -30,7 +30,7 @@ module.exports = {
       .setAccentColor(0x1f3a5f)
       .addTextDisplayComponents((td) =>
         td.setContent(
-          `# 🎫 Centro de Soporte — Medellín Roleplay\n` +
+          `# 🎫 Centro de Soporte — La Nación Rp\n` +
             `¿Necesitás contactar a algún departamento? Elegí una opción abajo y se te va a crear un canal privado.`,
         ),
       )
