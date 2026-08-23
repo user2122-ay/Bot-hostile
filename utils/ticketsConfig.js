@@ -6,7 +6,7 @@ const DEPARTAMENTOS = {
     emojiName: 'asociacion',
     color: 0xf1c40f,
   },
-  asuntos_internos: {
+  Dirección: {
     label: 'Asuntos Internos',
     roleId: '1528573535440601178',
     emojiId: '1530964526219133018',
