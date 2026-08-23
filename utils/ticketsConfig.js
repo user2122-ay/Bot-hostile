@@ -29,8 +29,8 @@ const DEPARTAMENTOS = {
   },
 };
 
-const CANAL_PANEL_ID = '1396617856275320863';
-const CANAL_REGISTROS_ID = '1522738994478186648';
+const CANAL_PANEL_ID = '1537955945781665832';
+const CANAL_REGISTROS_ID = '1535465853879844944';
 
 // Para mostrar el emoji dentro de texto normal (mensajes, títulos).
 function emojiMencion(dep) {
