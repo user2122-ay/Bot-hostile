@@ -3,7 +3,7 @@ const { Events, ContainerBuilder, SeparatorSpacingSize, MessageFlags } = require
 // ---------- CONFIG ----------
 const CANAL_BIENVENIDA_ID = '1531111628081336450';
 const IMAGEN_BIENVENIDA =
-  'https://cdn.discordapp.com/attachments/1528212860415643658/1528424008935018666/BIENVENID_20260628_163525_00002.jpg?ex=6a5e3f48&is=6a5cedc8&hm=4506a511dffa19bedaa46682e09bc40398ec15a3f32ad0c8e86e715750d62fb4&';
+  'https://cdn.discordapp.com/attachments/1540819885813399723/1540892627396722768/BIENVENID_20260822_201132_0000.png?ex=6a8b9b96&is=6a8a4a16&hm=d6220d2ee2c7712929afc5d2421cf5d179369b7980f4a472b7c94042fc8a3099&';
 const NOMBRE_SERVER = 'Medellín Roleplay';
 
 const CANAL_REGLAS_ID = '1531112187060555807';
