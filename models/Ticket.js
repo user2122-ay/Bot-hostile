@@ -6,10 +6,12 @@ const ticketSchema = new mongoose.Schema({
   departamento: { type: String, required: true },
   numero: { type: Number, required: true },
   abierto: { type: Boolean, default: true },
+  motivo: { type: String, default: null },
   reclamadoPor: { type: String, default: null },
   reclamadoEn: { type: Date, default: null },
   creadoEn: { type: Date, default: Date.now },
   cerradoEn: { type: Date, default: null },
+  razonCierre: { type: String, default: null },
 });
 
 module.exports = mongoose.model('Ticket', ticketSchema);
