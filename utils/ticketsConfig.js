@@ -7,12 +7,12 @@ const DEPARTAMENTOS = {
     color: 0xf1c40f,
   },
   Dirección: {
-    label: 'Asuntos Internos',
-    roleId: '1528573535440601178',
-    emojiId: '1530964526219133018',
-    emojiName: 'herramientas',
-    color: 0xc0392b,
-  },
+  label: 'Dirección',   // antes: 'Asuntos Internos'
+  roleId: '1528573535440601178',
+  emojiId: '1530964526219133018',
+  emojiName: 'herramientas',
+  color: 0xc0392b,
+},
   administracion: {
     label: 'Administración',
     roleId: '1528573203537068072',
