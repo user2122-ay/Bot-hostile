@@ -1,28 +1,28 @@
 const DEPARTAMENTOS = {
   fundacion: {
     label: 'Fundación',
-    roleId: '1396174893892243660',
+    roleId: '1396174899306954903',
     emojiId: '1449546324906082314',
     emojiName: 'owner',
     color: 0xf1c40f,
   },
   asuntos_internos: {
     label: 'Asuntos Internos',
-    roleId: '1396174902465396827',
+    roleId: '1528573535440601178',
     emojiId: '1458867618382352395',
     emojiName: 'AI2',
     color: 0xc0392b,
   },
   administracion: {
     label: 'Administración',
-    roleId: '1396174907234193408',
+    roleId: '1528573203537068072',
     emojiId: '1458868143102497024',
     emojiName: 'ADMIN2',
     color: 0xe67e22,
   },
   moderacion: {
     label: 'Moderación',
-    roleId: '1396174915098513499',
+    roleId: '1528573112055234640',
     emojiId: '1458868676873687135',
     emojiName: 'MOD',
     color: 0x3498db,
