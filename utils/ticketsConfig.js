@@ -7,12 +7,12 @@ const DEPARTAMENTOS = {
     color: 0xf1c40f,
   },
   Dirección: {
-  label: 'Dirección',   // antes: 'Asuntos Internos'
-  roleId: '1528573535440601178',
-  emojiId: '1530964526219133018',
-  emojiName: 'herramientas',
-  color: 0xc0392b,
-},
+    label: 'Dirección',
+    roleId: '1528573535440601178',
+    emojiId: '1530964526219133018',
+    emojiName: 'herramientas',
+    color: 0xc0392b,
+  },
   administracion: {
     label: 'Administración',
     roleId: '1528573203537068072',
@@ -41,13 +41,13 @@ function emojiMencion(dep) {
 function emojiSelect(dep) {
   return { id: dep.emojiId, name: dep.emojiName };
 }
-1
-// ¿Este member tiene el rol del departamento de ESE ticket? (para Reclamar)
+
+// ¿Este member tiene el rol del departamento de ESE ticket? (para Reclamar y para Cerrar)
 function esStaffDelDepartamento(member, dep) {
   return member.roles.cache.has(dep.roleId);
 }
 
-// ¿Este member es staff de CUALQUIER departamento? (para "algún otro staff" al Cerrar)
+// ¿Este member es staff de CUALQUIER departamento?
 function esStaffDeAlgunDepartamento(member) {
   return Object.values(DEPARTAMENTOS).some((dep) => member.roles.cache.has(dep.roleId));
 }
@@ -61,3 +61,4 @@ module.exports = {
   esStaffDelDepartamento,
   esStaffDeAlgunDepartamento,
 };
+
