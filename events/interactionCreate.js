@@ -14,7 +14,7 @@ const {
   AttachmentBuilder,
   FileBuilder,
 } = require('discord.js');
-const { obtenerUsuario, obtenerIconoMoneda } = require('../utils/economia');
+const { depositar, retirar, formatearMoneda, SaldoInsuficienteError } = require('../utils/economiaCore');
 const {
   DEPARTAMENTOS,
   CANAL_REGISTROS_ID,
@@ -169,41 +169,43 @@ module.exports = {
 
       if (interaction.customId === 'modal_depositar' || interaction.customId === 'modal_retirar') {
         const esDeposito = interaction.customId === 'modal_depositar';
-        const cantidad = parseInt(interaction.fields.getTextInputValue('cantidad'), 10);
+
+        // Limpiamos separadores de miles ("50.000", "50,000") antes de convertir,
+        // para que escribir la plata como se muestra en pantalla no trunque el valor.
+        const textoLimpio = interaction.fields.getTextInputValue('cantidad').replace(/[^\d]/g, '');
+        const cantidad = parseInt(textoLimpio, 10);
 
         if (!Number.isInteger(cantidad) || cantidad <= 0) {
           await interaction.reply({ content: '❌ Ingresá un número válido mayor a 0.', ephemeral: true });
           return;
         }
 
-        const usuario = await obtenerUsuario(interaction.user.id);
-        const icono = await obtenerIconoMoneda();
+        try {
+          const usuario = esDeposito ? await depositar(interaction.user.id, cantidad) : await retirar(interaction.user.id, cantidad);
 
-        if (esDeposito) {
-          if (usuario.cartera < cantidad) {
-            await interaction.reply({ content: `❌ No tenés suficiente en la cartera. Tenés ${usuario.cartera.toLocaleString('es-CO')} ${icono}.`, ephemeral: true });
+          const montoTexto = await formatearMoneda(cantidad);
+          const carteraTexto = await formatearMoneda(usuario.cartera);
+          const bancoTexto = await formatearMoneda(usuario.banco);
+
+          await interaction.reply({
+            content:
+              `✅ ${esDeposito ? 'Depositaste' : 'Retiraste'} ${montoTexto}.\n` +
+              `**Cartera:** ${carteraTexto}\n` +
+              `**Banco:** ${bancoTexto}`,
+            ephemeral: true,
+          });
+        } catch (err) {
+          if (err instanceof SaldoInsuficienteError) {
+            const disponibleTexto = await formatearMoneda(err.disponible);
+            await interaction.reply({
+              content: `❌ No tenés suficiente en ${esDeposito ? 'la cartera' : 'el banco'}. Tenés ${disponibleTexto}.`,
+              ephemeral: true,
+            });
             return;
           }
-          usuario.cartera -= cantidad;
-          usuario.banco += cantidad;
-        } else {
-          if (usuario.banco < cantidad) {
-            await interaction.reply({ content: `❌ No tenés suficiente en el banco. Tenés ${usuario.banco.toLocaleString('es-CO')} ${icono}.`, ephemeral: true });
-            return;
-          }
-          usuario.banco -= cantidad;
-          usuario.cartera += cantidad;
+          console.error('❌ Error en depósito/retiro:', err);
+          await interaction.reply({ content: '❌ Hubo un error procesando la operación.', ephemeral: true });
         }
-
-        await usuario.save();
-
-        await interaction.reply({
-          content:
-            `✅ ${esDeposito ? 'Depositaste' : 'Retiraste'} ${cantidad.toLocaleString('es-CO')} ${icono}.\n` +
-            `**Cartera:** ${usuario.cartera.toLocaleString('es-CO')} ${icono}\n` +
-            `**Banco:** ${usuario.banco.toLocaleString('es-CO')} ${icono}`,
-          ephemeral: true,
-        });
       }
     }
   },
@@ -367,7 +369,6 @@ async function mostrarModalCierre(interaction) {
 
   const dep = DEPARTAMENTOS[ticket.departamento];
 
-  // Solo el staff del departamento dueño del ticket puede cerrarlo.
   if (!esStaffDelDepartamento(interaction.member, dep)) {
     await interaction.reply({ content: `❌ Solo el staff de **${dep.label}** puede cerrar este ticket.`, ephemeral: true });
     return;
@@ -397,7 +398,6 @@ async function manejarCierreTicket(interaction) {
 
   const dep = DEPARTAMENTOS[ticket.departamento];
 
-  // Se vuelve a validar acá por si el modal quedó abierto y el ticket cambió mientras tanto.
   if (!esStaffDelDepartamento(interaction.member, dep)) {
     await interaction.reply({ content: `❌ Solo el staff de **${dep.label}** puede cerrar este ticket.`, ephemeral: true });
     return;
