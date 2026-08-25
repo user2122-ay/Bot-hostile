@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, ContainerBuilder, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, ContainerBuilder, SeparatorSpacingSize, MessageFlags } = require('discord.js');
 const Sueldo = require('../models/Sueldo');
-const { obtenerIconoMoneda } = require('../utils/economia');
+const { formatearMoneda } = require('../utils/economiaCore');
 const { formatearIntervalo } = require('../utils/tiempo');
 
 const COLOR_ECONOMIA = 0x27ae60;
@@ -11,25 +11,39 @@ module.exports = {
     .setDescription('Ver todos los roles con sueldo configurado'),
 
   async execute(interaction) {
-    const sueldos = await Sueldo.find().sort({ monto: -1 });
-    const icono = await obtenerIconoMoneda();
+    await interaction.deferReply();
 
-    let contenido;
+    const sueldos = await Sueldo.find().sort({ monto: -1 });
+
     if (sueldos.length === 0) {
-      contenido = `## 📊 Sueldos configurados\nTodavía no hay ningún rol con sueldo.`;
-    } else {
-      const lista = sueldos
-        .map((s) => {
-          const rol = interaction.guild.roles.cache.get(s.roleId);
-          const nombreRol = rol ? rol : `\`${s.roleId}\` (rol eliminado)`;
-          return `• ${nombreRol} — **${s.monto.toLocaleString('es-CO')}** ${icono} cada ${formatearIntervalo(s.intervaloMinutos || 60)}`;
-        })
-        .join('\n');
-      contenido = `## 📊 Sueldos configurados\n${lista}`;
+      const container = new ContainerBuilder()
+        .setAccentColor(COLOR_ECONOMIA)
+        .addTextDisplayComponents((td) => td.setContent('## 📊 Sueldos configurados\nTodavía no hay ningún rol con sueldo.'));
+      await interaction.editReply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+      return;
     }
 
-    const container = new ContainerBuilder().setAccentColor(COLOR_ECONOMIA).addTextDisplayComponents((td) => td.setContent(contenido));
+    // Mostramos el nombre del rol como texto plano (rol.name), no como mención:
+    // así no se resalta ni notifica a nadie que tenga ese rol.
+    const lineas = await Promise.all(
+      sueldos.map(async (s) => {
+        const rol = interaction.guild.roles.cache.get(s.roleId);
+        const nombreRol = rol ? rol.name : `Rol eliminado (${s.roleId})`;
+        const montoTexto = await formatearMoneda(s.monto);
+        return `💰 **${nombreRol}** — ${montoTexto} cada ${formatearIntervalo(s.intervaloMinutos || 60)}`;
+      }),
+    );
 
-    await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+    const container = new ContainerBuilder()
+      .setAccentColor(COLOR_ECONOMIA)
+      .addTextDisplayComponents((td) => td.setContent('## 📊 Sueldos configurados'))
+      .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
+      .addTextDisplayComponents((td) => td.setContent(lineas.join('\n')))
+      .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
+      .addTextDisplayComponents((td) =>
+        td.setContent(`-# ${sueldos.length} rol${sueldos.length === 1 ? '' : 'es'} con sueldo configurado`),
+      );
+
+    await interaction.editReply({ components: [container], flags: MessageFlags.IsComponentsV2 });
   },
 };
