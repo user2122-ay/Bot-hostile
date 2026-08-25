@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, ContainerBuilder, MessageFlags } = require('discord.js');
-const { obtenerUsuario, obtenerIconoMoneda } = require('../utils/economia');
+const { SlashCommandBuilder, ContainerBuilder, SeparatorSpacingSize, MessageFlags } = require('discord.js');
+const { transferir, formatearMoneda, SaldoInsuficienteError } = require('../utils/economiaCore');
 const { IMPUESTO_TRANSFERENCIA_PORCENTAJE } = require('../utils/economiaConfig');
 
 const COLOR_ECONOMIA = 0x27ae60;
@@ -26,40 +26,49 @@ module.exports = {
       return;
     }
 
-    const remitente = await obtenerUsuario(interaction.user.id);
-    const icono = await obtenerIconoMoneda();
-
-    if (remitente.cartera < cantidad) {
-      await interaction.reply({
-        content: `❌ No tenés suficiente en la cartera. Tenés ${remitente.cartera.toLocaleString('es-CO')} ${icono}.`,
-        ephemeral: true,
-      });
-      return;
-    }
-
-    const impuesto = Math.ceil((cantidad * IMPUESTO_TRANSFERENCIA_PORCENTAJE) / 100);
-    const montoRecibido = cantidad - impuesto;
-
-    const destinatario = await obtenerUsuario(objetivo.id);
-
-    remitente.cartera -= cantidad;
-    destinatario.cartera += montoRecibido;
-
-    await remitente.save();
-    await destinatario.save();
-
-    const container = new ContainerBuilder()
-      .setAccentColor(COLOR_ECONOMIA)
-      .addTextDisplayComponents((td) =>
-        td.setContent(
-          `## 💸 Transferencia realizada\n` +
-            `${interaction.user} le pagó a ${objetivo}\n\n` +
-            `**Monto:** ${cantidad.toLocaleString('es-CO')} ${icono}\n` +
-            `**Impuesto (${IMPUESTO_TRANSFERENCIA_PORCENTAJE}%):** ${impuesto.toLocaleString('es-CO')} ${icono}\n` +
-            `**Recibido:** ${montoRecibido.toLocaleString('es-CO')} ${icono}`,
-        ),
+    try {
+      const { impuesto, montoRecibido } = await transferir(
+        interaction.user.id,
+        objetivo.id,
+        cantidad,
+        IMPUESTO_TRANSFERENCIA_PORCENTAJE,
       );
 
-    await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+      const montoTexto = await formatearMoneda(cantidad);
+      const impuestoTexto = await formatearMoneda(impuesto);
+      const recibidoTexto = await formatearMoneda(montoRecibido);
+
+      const container = new ContainerBuilder()
+        .setAccentColor(COLOR_ECONOMIA)
+        .addSectionComponents((section) =>
+          section
+            .addTextDisplayComponents((td) =>
+              td.setContent(`## 💸 Transferencia realizada\n${interaction.user} le pagó a ${objetivo}`),
+            )
+            .setThumbnailAccessory((thumb) => thumb.setURL(objetivo.displayAvatarURL())),
+        )
+        .addSeparatorComponents((sep) => sep.setSpacing(SeparatorSpacingSize.Small).setDivider(true))
+        .addTextDisplayComponents((td) =>
+          td.setContent(
+            `**Monto:** ${montoTexto}\n` +
+              `**Impuesto (${IMPUESTO_TRANSFERENCIA_PORCENTAJE}%):** ${impuestoTexto}\n` +
+              `**Recibido:** ${recibidoTexto}`,
+          ),
+        );
+
+      await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+    } catch (err) {
+      if (err instanceof SaldoInsuficienteError) {
+        const disponibleTexto = await formatearMoneda(err.disponible);
+        await interaction.reply({
+          content: `❌ No tenés suficiente en la cartera. Tenés ${disponibleTexto}.`,
+          ephemeral: true,
+        });
+        return;
+      }
+      console.error('❌ Error en /pagar:', err);
+      await interaction.reply({ content: '❌ Hubo un error procesando la transferencia.', ephemeral: true });
+    }
   },
 };
+
