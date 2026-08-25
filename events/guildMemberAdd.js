@@ -71,7 +71,7 @@ module.exports = {
         // ---- Cierre ----
         .addTextDisplayComponents((td) =>
           td.setContent(
-            `-# Disfrutá tu estadía en ${NOMBRE_SERVER}. Recordá que todo rol tiene consecuencias — actuá en consecuencia.`,
+            `-# Disfrutá tu estadía en La Nación Rp. Recordá que todo rol tiene consecuencias — actuá en consecuencia.`,
           ),
         );
 
